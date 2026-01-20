@@ -1,0 +1,3 @@
+# Ignore actual secret files
+secret.yaml
+*.secret.yaml

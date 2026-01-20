@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finance-tracker-config
+  namespace: default
+data:
+  config.yaml: |
+    # Server Configuration
+    server:
+      port: "8080"
+      mode: "release"
+      timeout: 30
+
+    # Database Configuration
+    database:
+      host: "postgres-service"  # Kubernetes service name
+      port: "5432"
+      user: "finance"
+      dbname: "finance_tracker"
+      sslmode: "disable"
+
+    # Application Configuration
+    app:
+      log_level: "info"
+      log_format: "json"

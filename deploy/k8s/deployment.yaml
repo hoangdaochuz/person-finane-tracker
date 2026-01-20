@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finance-tracker-backend
+  namespace: default
+  labels:
+    app: finance-tracker
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: finance-tracker
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: finance-tracker
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: finance-tracker-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # Secrets from environment variables
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finance-tracker-secret
+              key: API_KEY
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finance-tracker-secret
+              key: DB_PASSWORD
+        # Optional: Override config values via env vars
+        - name: DATABASE_HOST
+          value: "postgres-service"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: finance-tracker-config
