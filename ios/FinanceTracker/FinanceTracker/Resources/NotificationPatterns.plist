@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Patterns</key>
+    <dict>
+        <key>Amount</key>
+        <array>
+            <string>(?:Rp|IDR|USD|\$)?\s*([\d,]+\.?\d*)</string>
+        </array>
+        <key>Merchant</key>
+        <array>
+            <string>(?:at|from|to)\s+([A-Z][A-Za-z\s]+?)(?:\s+on|\s*$|\.)</string>
+        </array>
+        <key>IncomeKeywords</key>
+        <array>
+            <string>received</string>
+            <string>credit</string>
+            <string>deposit</string>
+            <string>transfer from</string>
+            <string>incoming</string>
+        </array>
+        <key>ExpenseKeywords</key>
+        <array>
+            <string>spent</string>
+            <string>payment</string>
+            <string>purchase</string>
+            <string>debit</string>
+            <string>transfer to</string>
+        </array>
+    </dict>
+    <key>KnownSources</key>
+    <array>
+        <string>BCA</string>
+        <string>Mandiri</string>
+        <string>BNI</string>
+        <string>BRI</string>
+        <string>Gopay</string>
+        <string>OVO</string>
+        <string>Dana</string>
+        <string>Jenius</string>
+    </array>
+</dict>
+</plist>
