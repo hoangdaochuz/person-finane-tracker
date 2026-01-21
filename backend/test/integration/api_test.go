@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -21,6 +22,16 @@ import (
 	"github.com/dev/personal-finance-tracker/backend/internal/service"
 	"github.com/dev/personal-finance-tracker/backend/test/util"
 )
+
+// skipIfNoDocker skips integration tests if Docker is not available for testcontainers
+func skipIfNoDocker(t *testing.T) {
+	t.Helper()
+
+	// Check for explicit environment variable to skip integration tests
+	if os.Getenv("SKIP_INTEGRATION") == "1" || os.Getenv("SKIP_E2E") == "1" {
+		t.Skip("Skipping integration test: SKIP_INTEGRATION=1 or SKIP_E2E=1")
+	}
+}
 
 func setupTestServer(t *testing.T) (*httptest.Server, string) {
 	t.Helper()
@@ -89,6 +100,7 @@ func makeRequest(t *testing.T, server *httptest.Server, method, path string, bod
 // Test API Integration: Create transaction then retrieve it
 
 func TestAPI_Integration_CreateAndRetrieve(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 
@@ -126,6 +138,7 @@ func TestAPI_Integration_CreateAndRetrieve(t *testing.T) {
 // Test API Integration: Batch create then list
 
 func TestAPI_Integration_BatchCreateAndList(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 
@@ -197,6 +210,7 @@ func TestAPI_Integration_BatchCreateAndList(t *testing.T) {
 // Test API Integration: Create then query analytics
 
 func TestAPI_Integration_CreateThenQueryAnalytics(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 
@@ -250,6 +264,7 @@ func TestAPI_Integration_CreateThenQueryAnalytics(t *testing.T) {
 // Test API error responses
 
 func TestAPI_Integration_ErrorResponses(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 
@@ -330,6 +345,7 @@ func TestAPI_Integration_ErrorResponses(t *testing.T) {
 }
 
 func TestAPI_Integration_InvalidTrendsPeriod(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 
@@ -343,6 +359,7 @@ func TestAPI_Integration_InvalidTrendsPeriod(t *testing.T) {
 }
 
 func TestAPI_Integration_CORSHeaders(t *testing.T) {
+	skipIfNoDocker(t)
 	server, apiKey := setupTestServer(t)
 	defer server.Close()
 

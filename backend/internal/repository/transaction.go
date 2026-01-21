@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/dev/personal-finance-tracker/backend/internal/domain"
+	"github.com/dev/personal-finance-tracker/backend/internal/security"
 )
 
 // TransactionRepository handles database operations for transactions
@@ -19,7 +20,8 @@ type TransactionRepository interface {
 }
 
 type transactionRepository struct {
-	db *gorm.DB
+	db         *gorm.DB
+	sanitizer *security.Sanitizer
 }
 
 const (
@@ -28,7 +30,10 @@ const (
 
 // NewTransactionRepository creates a new transaction repository
 func NewTransactionRepository(db *gorm.DB) TransactionRepository {
-	return &transactionRepository{db: db}
+	return &transactionRepository{
+		db:         db,
+		sanitizer: security.NewSanitizer(),
+	}
 }
 
 func (r *transactionRepository) Create(tx *domain.Transaction) error {
@@ -44,6 +49,7 @@ func (r *transactionRepository) CreateInBatch(transactions []domain.Transaction)
 
 func (r *transactionRepository) FindByID(id int64) (*domain.Transaction, error) {
 	var tx domain.Transaction
+	// Use parameterized query (implicit protection via GORM)
 	err := r.db.First(&tx, id).Error
 	if err != nil {
 		return nil, err
@@ -57,17 +63,30 @@ func (r *transactionRepository) List(params domain.ListTransactionsQueryParams) 
 
 	query := r.db.Model(&domain.Transaction{})
 
-	// Apply filters
+	// Apply filters with explicit sanitization (defense-in-depth)
+	// GORM's ? placeholder provides parameterized query protection
 	if params.Type != "" {
-		query = query.Where("type = ?", params.Type)
+		// Validate transaction type before using in query
+		typeStr := string(params.Type)
+		if r.sanitizer.ValidateTransactionType(typeStr) {
+			query = query.Where("type = ?", params.Type)
+		}
 	}
 	if params.Source != "" {
-		query = query.Where("source = ?", params.Source)
+		// Sanitize source input to prevent injection
+		safeSource := r.sanitizer.CleanInput(params.Source, domain.MaxSourceLength)
+		query = query.Where("source = ?", safeSource)
 	}
 	if params.Category != "" {
-		query = query.Where("category = ?", params.Category)
+		// Validate category against whitelist
+		if r.sanitizer.ValidateCategory(params.Category) {
+			safeCategory := r.sanitizer.CleanInput(params.Category, domain.MaxCategoryLength)
+			query = query.Where("category = ?", safeCategory)
+		}
 	}
 	if params.StartDate != "" {
+		// Dates are always in ISO 8601 format (RFC3339), which is safe
+		// The validation in domain layer ensures proper format
 		query = query.Where("transaction_date >= ?", params.StartDate)
 	}
 	if params.EndDate != "" {
@@ -79,7 +98,7 @@ func (r *transactionRepository) List(params domain.ListTransactionsQueryParams) 
 		return nil, 0, err
 	}
 
-	// Enforce maximum page size
+	// Enforce maximum page size (prevent DoS via large page sizes)
 	pageSize := params.PageSize
 	if pageSize > maxPageSize {
 		pageSize = maxPageSize
@@ -88,8 +107,12 @@ func (r *transactionRepository) List(params domain.ListTransactionsQueryParams) 
 		pageSize = 20 // default page size
 	}
 
-	// Apply pagination
+	// Apply pagination with offset validation
+	if params.Page < 1 {
+		params.Page = 1
+	}
 	offset := (params.Page - 1) * pageSize
+
 	err := query.
 		Order("transaction_date DESC").
 		Limit(pageSize).
@@ -106,6 +129,7 @@ func (r *transactionRepository) GetSummary() (*domain.SummaryResponse, error) {
 		TransactionCount int64
 	}
 
+	// Raw SQL is safe here - no user input, hardcoded query
 	err := r.db.Model(&domain.Transaction{}).
 		Select(`
 			COALESCE(SUM(CASE WHEN type = 'in' THEN amount ELSE 0 END), 0) as total_income,
@@ -129,9 +153,13 @@ func (r *transactionRepository) GetSummary() (*domain.SummaryResponse, error) {
 func (r *transactionRepository) GetTrends(period string) ([]domain.TrendDataPoint, error) {
 	var results []domain.TrendDataPoint
 
-	// Use safe, hardcoded query templates to prevent SQL injection
+	// Validate and sanitize period parameter (whitelist approach)
+	safePeriod := r.sanitizer.ValidatePeriod(period)
+
+	// Use safe, hardcoded query templates based on validated period
+	// This prevents SQL injection as the SQL templates are completely hardcoded
 	var query string
-	switch period {
+	switch safePeriod {
 	case "daily":
 		query = `
 			SELECT
@@ -187,6 +215,7 @@ func (r *transactionRepository) GetTrends(period string) ([]domain.TrendDataPoin
 		`
 	}
 
+	// Raw SQL is safe here - query is completely hardcoded, no user input interpolation
 	err := r.db.Raw(query).Scan(&results).Error
 	return results, err
 }
@@ -201,7 +230,7 @@ func (r *transactionRepository) GetBreakdownBySource() ([]domain.BreakdownRespon
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&totalExpense)
 
-	// Get breakdown by source
+	// Get breakdown by source - hardcoded SQL with no user input
 	query := `
 		SELECT
 			source as label,
@@ -238,7 +267,7 @@ func (r *transactionRepository) GetBreakdownByCategory() ([]domain.BreakdownResp
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&totalExpense)
 
-	// Get breakdown by category
+	// Get breakdown by category - hardcoded SQL with no user input
 	query := `
 		SELECT
 			COALESCE(category, 'Uncategorized') as label,

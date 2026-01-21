@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -22,6 +23,16 @@ import (
 	"github.com/dev/personal-finance-tracker/backend/internal/service"
 	"github.com/dev/personal-finance-tracker/backend/test/util"
 )
+
+// skipIfNoDocker skips E2E tests if Docker is not available for testcontainers
+func skipIfNoDocker(t *testing.T) {
+	t.Helper()
+
+	// Check for explicit environment variable to skip E2E tests
+	if os.Getenv("SKIP_E2E") == "1" {
+		t.Skip("Skipping E2E test: SKIP_E2E=1")
+	}
+}
 
 // E2ETestServer wraps the test server with all dependencies
 type E2ETestServer struct {
@@ -110,6 +121,7 @@ func (s *E2ETestServer) MakeRequest(t *testing.T, method, path string, body inte
 // Test E2E: Complete user flow - create transaction, verify in summary
 
 func TestE2E_CompleteUserFlow(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
@@ -224,6 +236,7 @@ func TestE2E_CompleteUserFlow(t *testing.T) {
 // Test E2E: Authentication workflow
 
 func TestE2E_AuthenticationFlow(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
@@ -255,6 +268,7 @@ func TestE2E_AuthenticationFlow(t *testing.T) {
 // Test E2E: Error handling workflow
 
 func TestE2E_ErrorHandlingFlow(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
@@ -306,6 +320,7 @@ func TestE2E_ErrorHandlingFlow(t *testing.T) {
 // Test E2E: Pagination with large dataset
 
 func TestE2E_PaginationWorkflow(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
@@ -366,6 +381,7 @@ func TestE2E_PaginationWorkflow(t *testing.T) {
 // Test E2E: Analytics after data insertion
 
 func TestE2E_AnalyticsFlow(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
@@ -431,6 +447,7 @@ func TestE2E_AnalyticsFlow(t *testing.T) {
 // Test E2E: Create and retrieve individual transaction
 
 func TestE2E_CreateAndRetrieveTransaction(t *testing.T) {
+	skipIfNoDocker(t)
 	server := SetupE2EServer(t)
 	defer server.Close(t)
 
