@@ -22,6 +22,7 @@ func setupTestDB(t *testing.T) *util.PostgresTestContainer {
 // Test complete transaction CRUD flow
 
 func TestIntegration_TransactionCRUD(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -116,6 +117,7 @@ func TestIntegration_TransactionCRUD(t *testing.T) {
 }
 
 func TestIntegration_BatchInsert(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -147,6 +149,7 @@ func TestIntegration_BatchInsert(t *testing.T) {
 }
 
 func TestIntegration_GetSummary(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -173,6 +176,7 @@ func TestIntegration_GetSummary(t *testing.T) {
 }
 
 func TestIntegration_GetBreakdownBySource(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -203,6 +207,7 @@ func TestIntegration_GetBreakdownBySource(t *testing.T) {
 }
 
 func TestIntegration_GetBreakdownByCategory(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -234,6 +239,7 @@ func TestIntegration_GetBreakdownByCategory(t *testing.T) {
 }
 
 func TestIntegration_GetTrends(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -258,6 +264,7 @@ func TestIntegration_GetTrends(t *testing.T) {
 }
 
 func TestIntegration_TransactionNotFound(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -268,6 +275,7 @@ func TestIntegration_TransactionNotFound(t *testing.T) {
 }
 
 func TestIntegration_EmptyDatabase(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
@@ -301,6 +309,7 @@ func TestIntegration_EmptyDatabase(t *testing.T) {
 }
 
 func TestIntegration_DateFilters(t *testing.T) {
+	skipIfNoDocker(t)
 	pc := setupTestDB(t)
 	db := pc.NewGORMDBWithAutoMigrate(t, &domain.Transaction{})
 	repo := repository.NewTransactionRepository(db)
