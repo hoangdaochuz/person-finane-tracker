@@ -33,7 +33,7 @@ class MockAPIServiceForDashboard: APIServiceProtocol {
         return User(email: email, apiKey: "mock_api_key")
     }
 
-    func register(email: String, password: String) async throws -> User {
+    func register(email: String, password: String, name: String? = nil) async throws -> User {
         if shouldThrowError { throw APIError.clientError("Registration failed") }
         return User(email: email, apiKey: "mock_api_key")
     }

@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -24,8 +24,9 @@ WORKDIR /app
 # Install ca-certificates for HTTPS calls
 RUN apk --no-cache add ca-certificates
 
-# Copy the binary from builder
+# Copy the binary and config from builder
 COPY --from=builder /app/main .
+COPY --from=builder /app/config.yaml .
 
 # Expose port
 EXPOSE 8080
