@@ -1,6 +1,51 @@
 import Foundation
 import CoreData
 
+// MARK: - Authentication Response Models
+
+// Backend returns: {"token": "jwt", "user": {...}}
+struct AuthResponse: Codable {
+    let token: String
+    let user: UserDTO
+
+    // Convert to iOS User model
+    func toUser() -> User {
+        return user.toUser()
+    }
+}
+
+// UserDTO matches the backend's UserResponse JSON format
+struct UserDTO: Codable {
+    let id: Int64           // Database ID (not used by iOS)
+    let uuid: UUID          // This is what iOS uses as the user's id
+    let email: String
+    let name: String?
+    let apiKey: String      // Backend uses api_key (snake_case) but Codable handles mapping
+    let isActive: Bool      // Backend uses is_active
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case uuid
+        case email
+        case name
+        case apiKey = "api_key"
+        case isActive = "is_active"
+    }
+
+    // Convert to iOS User model
+    func toUser() -> User {
+        // Use the UUID as the user's id (not the int64 database id)
+        return User(
+            id: uuid,
+            email: email,
+            name: name,
+            apiKey: apiKey,
+            isBiometricEnabled: false // Default to false, user can enable later
+        )
+    }
+}
+
+// Legacy LoginResponse - kept for compatibility
 struct LoginResponse: Codable {
     let apiKey: String
     let user: User

@@ -4,10 +4,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: finance-tracker-db
-    environment:
-      POSTGRES_USER: finance
-      POSTGRES_PASSWORD: finance
-      POSTGRES_DB: finance_tracker
+    env_file:
+      - ../.env
     ports:
       - "5432:5432"
     volumes:
@@ -20,19 +18,23 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile
     container_name: finance-tracker-api
-    environment:
-      # Secrets only - other config comes from config.yaml
-      API_KEY: your-secret-api-key-here
-      DB_PASSWORD: finance
+    env_file:
+      - ../.env
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:

@@ -1,8 +1,8 @@
 # Server Configuration
 server:
   port: "8080"
-  mode: "debug"           # debug, release, test
-  timeout: 30             # request timeout in seconds
+  mode: "debug" # debug, release, test
+  timeout: 30 # request timeout in seconds
 
 # Database Configuration
 database:
@@ -10,9 +10,9 @@ database:
   port: "5432"
   user: "finance"
   dbname: "finance_tracker"
-  sslmode: "disable"      # disable, require, verify-ca, verify-full
+  sslmode: "disable" # disable, require, verify-ca, verify-full
 
 # Application Configuration
 app:
-  log_level: "info"       # debug, info, warn, error
-  log_format: "json"      # json, text
+  log_level: "info" # debug, info, warn, error
+  log_format: "json" # json, text

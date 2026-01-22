@@ -16,12 +16,15 @@ type Config struct {
 	Server struct {
 		Timeout        int      `mapstructure:"timeout"` // request timeout in seconds
 		Port           string   `mapstructure:"port"`
-		Mode           string   `mapstructure:"mode"` // debug, release
+		Mode           string   `mapstructure:"mode"`            // debug, release
 		AllowedOrigins []string `mapstructure:"allowed_origins"` // CORS allowed origins
 	} `mapstructure:"server"`
 
 	// Secrets (from .env only)
-	APIKey string `mapstructure:"-"`
+	APIKey  string `mapstructure:"-"`
+	JWT     struct {
+		Secret string `mapstructure:"-"` // from .env only
+	} `mapstructure:"jwt"`
 
 	// Database config (from config file + env vars, password from .env only)
 	Database struct {
@@ -76,13 +79,19 @@ func Load(configPath string) (*Config, error) {
 
 	// Allow DATABASE_PASSWORD or DB_PASSWORD
 	dbPassword := os.Getenv("DATABASE_PASSWORD")
+	// if dbPassword == "" {
+	// 	dbPassword = os.Getenv("DB_PASSWORD")
+	// }
 	if dbPassword == "" {
-		dbPassword = os.Getenv("DB_PASSWORD")
-	}
-	if dbPassword == "" {
-		return nil, fmt.Errorf("DB_PASSWORD is required (set in .env or environment)")
+		return nil, fmt.Errorf("DATABASE_PASSWORD is required (set in .env or environment)")
 	}
 	cfg.Database.Password = dbPassword
+
+	// Load JWT secret from environment variable
+	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+	if cfg.JWT.Secret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is required (set in .env or environment)")
+	}
 
 	// Step 7: Explicitly check for env var overrides for common keys
 	// This ensures Unmarshal didn't miss env vars
@@ -141,9 +150,10 @@ func WatchConfig(callback func(*Config)) {
 		// Get current env values (secrets)
 		apiKey := os.Getenv("API_KEY")
 		dbPassword := os.Getenv("DATABASE_PASSWORD")
-		if dbPassword == "" {
-			dbPassword = os.Getenv("DB_PASSWORD")
-		}
+		jwtSecret := os.Getenv("JWT_SECRET")
+		// if dbPassword == "" {
+		// 	dbPassword = os.Getenv("DB_PASSWORD")
+		// }
 
 		// Unmarshal new config
 		cfg := &Config{}
@@ -155,6 +165,7 @@ func WatchConfig(callback func(*Config)) {
 		// Restore secrets
 		cfg.APIKey = apiKey
 		cfg.Database.Password = dbPassword
+		cfg.JWT.Secret = jwtSecret
 
 		// Apply env overrides
 		checkEnvOverrides(cfg)

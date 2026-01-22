@@ -49,7 +49,7 @@ backend/
 
 1. **Copy environment variables:**
    ```bash
-   cp backend/.env.example backend/.env
+   cp backend/.env.example .env
    ```
 
 2. **Update `.env` with your values:**
@@ -84,6 +84,13 @@ docker-compose -f deploy/docker-compose.yaml logs -f
 
 # Stop services
 docker-compose -f deploy/docker-compose.yaml down
+```
+
+Or use the Makefile from the backend directory:
+```bash
+cd backend
+make docker-run
+make docker-stop
 ```
 
 ## API Endpoints

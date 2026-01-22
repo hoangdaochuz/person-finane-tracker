@@ -11,6 +11,10 @@ class APIService: APIServiceProtocol {
         keychainManager.retrieve(key: "finance_tracker_api_key")
     }
 
+    var jwtToken: String? {
+        keychainManager.retrieve(key: "finance_tracker_jwt_token")
+    }
+
     init(session: URLSessionProtocol = URLSession.shared, baseURL: String, keychainManager: KeychainManager = KeychainManager(), coreDataStack: CoreDataStack = .shared) {
         self.session = session
         self.baseURL = baseURL
@@ -18,20 +22,29 @@ class APIService: APIServiceProtocol {
         self.coreDataStack = coreDataStack
     }
 
-    func login(email: String, password: String) async throws -> User {
+    func login(email: String, password: String) async throws -> (User, String) {
         var request = createRequest(for: .login(email: email, password: password))
         request.httpBody = try JSONEncoder().encode(["email": email, "password": password])
 
         let (data, response) = try await session.data(for: request)
-        return try handleResponse(data, response: response)
+        // Backend returns {token, user} - decode as AuthResponse then convert to User
+        let authResponse: AuthResponse = try handleResponse(data, response: response)
+        return (authResponse.toUser(), authResponse.token)
     }
 
-    func register(email: String, password: String) async throws -> User {
+    func register(email: String, password: String, name: String? = nil) async throws -> (User, String) {
         var request = createRequest(for: .register(email: email, password: password))
-        request.httpBody = try JSONEncoder().encode(["email": email, "password": password])
+
+        var body = ["email": email, "password": password]
+        if let name = name {
+            body["name"] = name
+        }
+        request.httpBody = try JSONEncoder().encode(body)
 
         let (data, response) = try await session.data(for: request)
-        return try handleResponse(data, response: response)
+        // Backend returns {token, user} - decode as AuthResponse then convert to User
+        let authResponse: AuthResponse = try handleResponse(data, response: response)
+        return (authResponse.toUser(), authResponse.token)
     }
 
     func createTransaction(_ transaction: Transaction) async throws -> Transaction {
@@ -91,7 +104,10 @@ class APIService: APIServiceProtocol {
     private func createAuthenticatedRequest(for endpoint: APIEndpoint) -> URLRequest {
         var request = createRequest(for: endpoint)
 
-        if let apiKey = apiKey {
+        // Prefer JWT token over API key for authenticated requests
+        if let token = jwtToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else if let apiKey = apiKey {
             request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
         }
 

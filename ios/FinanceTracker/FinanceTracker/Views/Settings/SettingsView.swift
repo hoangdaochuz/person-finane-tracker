@@ -141,7 +141,7 @@ struct SettingsView_Previews: PreviewProvider {
                 User(email: email, name: "Test User", isBiometricEnabled: false)
             }
 
-            func register(email: String, password: String) async throws -> User {
+            func register(email: String, password: String, name: String? = nil) async throws -> User {
                 User(email: email, name: "Test User", isBiometricEnabled: false)
             }
 

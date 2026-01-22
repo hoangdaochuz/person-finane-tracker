@@ -78,7 +78,7 @@ func main() {
 	// Auto-migrate the schema (for development and test only)
 	// In production, use golang-migrate instead
 	if cfg.Server.Mode == "debug" || cfg.Server.Mode == "test" {
-		if err := db.AutoMigrate(&domain.Transaction{}); err != nil {
+		if err := db.AutoMigrate(&domain.Transaction{}, &domain.User{}); err != nil {
 			log.Fatal().Err(err).Msg("Failed to migrate database")
 		}
 		log.Info().Msg("Database migration completed")
@@ -88,13 +88,16 @@ func main() {
 
 	// Initialize repositories
 	txRepo := repository.NewTransactionRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	// Initialize services
 	txService := service.NewTransactionService(txRepo)
+	authService := service.NewAuthService(userRepo, cfg.JWT.Secret)
 
 	// Initialize handlers
 	webhookHandler := handler.NewWebhookHandler(txService)
 	analyticsHandler := handler.NewAnalyticsHandler(txService)
+	authHandler := handler.NewAuthHandler(authService)
 
 	// Setup router
 	router := gin.New()
@@ -156,6 +159,13 @@ func main() {
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
+		// Auth endpoints (public - registration and login)
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+		}
+
 		// Webhook endpoints (require API key)
 		webhook := v1.Group("/webhook")
 		webhook.Use(middleware.APIKeyAuth(cfg.APIKey))

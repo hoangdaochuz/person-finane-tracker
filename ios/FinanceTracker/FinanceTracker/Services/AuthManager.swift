@@ -18,11 +18,14 @@ class AuthManager: ObservableObject {
     }
 
     func login(email: String, password: String) async throws {
-        let user = try await apiService.login(email: email, password: password)
+        let (user, token) = try await apiService.login(email: email, password: password)
 
         if let apiKey = user.apiKey {
             keychainManager.store(key: "finance_tracker_api_key", value: apiKey)
         }
+
+        // Store JWT token in keychain
+        keychainManager.store(key: "finance_tracker_jwt_token", value: token)
 
         await MainActor.run {
             self.currentUser = user
@@ -31,12 +34,15 @@ class AuthManager: ObservableObject {
         }
     }
 
-    func register(email: String, password: String) async throws {
-        let user = try await apiService.register(email: email, password: password)
+    func register(email: String, password: String, name: String? = nil) async throws {
+        let (user, token) = try await apiService.register(email: email, password: password, name: name)
 
         if let apiKey = user.apiKey {
             keychainManager.store(key: "finance_tracker_api_key", value: apiKey)
         }
+
+        // Store JWT token in keychain
+        keychainManager.store(key: "finance_tracker_jwt_token", value: token)
 
         await MainActor.run {
             self.currentUser = user
@@ -47,6 +53,7 @@ class AuthManager: ObservableObject {
 
     func logout() {
         keychainManager.delete(key: "finance_tracker_api_key")
+        keychainManager.delete(key: "finance_tracker_jwt_token")
         clearUserData()
         currentUser = nil
         isAuthenticated = false
@@ -152,8 +159,8 @@ class AuthManager: ObservableObject {
 }
 
 protocol APIServiceProtocol {
-    func login(email: String, password: String) async throws -> User
-    func register(email: String, password: String) async throws -> User
+    func login(email: String, password: String) async throws -> (User, String)
+    func register(email: String, password: String, name: String?) async throws -> (User, String)
     func createTransaction(_ transaction: Transaction) async throws -> Transaction
     func getTransactions(page: Int, limit: Int) async throws -> [Transaction]
     func getAnalytics(period: TimePeriod) async throws -> Analytics
